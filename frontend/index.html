@@ -1,0 +1,308 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduGenie - AI Learning Assistant</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f4f6fb;
+    color: #222;
+}
+
+header {
+    background: linear-gradient(135deg, #5546d8, #8875f5);
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 15px;
+}
+
+.welcome {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.welcome h2 {
+    color: #5546d8;
+    margin-bottom: 10px;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.card h3 {
+    color: #5546d8;
+    margin-bottom: 15px;
+}
+
+textarea, input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+button {
+    background: #5546d8;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 15px;
+}
+
+button:hover {
+    background: #4032b5;
+}
+
+.result {
+    background: #f0efff;
+    border-left: 4px solid #5546d8;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 5px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    display: none;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #777;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🎓 EduGenie</h1>
+    <p>Your AI-Powered Educational Assistant</p>
+</header>
+
+<div class="container">
+
+    <div class="welcome">
+        <h2>Welcome to EduGenie!</h2>
+        <p>Learn smarter, understand better and achieve more.</p>
+    </div>
+
+    <div class="features">
+
+        <div class="card">
+            <h3>💡 Ask a Question</h3>
+            <textarea id="question" placeholder="Ask anything..."></textarea>
+            <button onclick="askQuestion()">Get Answer</button>
+            <div id="answer" class="result"></div>
+        </div>
+
+        <div class="card">
+            <h3>📝 Generate Quiz</h3>
+            <input id="quizTopic" placeholder="Enter quiz topic">
+            <button onclick="generateQuiz()">Generate Quiz</button>
+            <div id="quizResult" class="result"></div>
+        </div>
+
+        <div class="card">
+            <h3>📚 Summarize Text</h3>
+            <textarea id="summaryText" placeholder="Paste your text here..."></textarea>
+            <button onclick="summarizeText()">Summarize</button>
+            <div id="summaryResult" class="result"></div>
+        </div>
+
+        <div class="card">
+            <h3>🚀 Learning Path</h3>
+            <input id="learningTopic" placeholder="Enter topic (e.g. SQL)">
+            <button onclick="generatePath()">Create Learning Path</button>
+            <div id="pathResult" class="result"></div>
+        </div>
+
+    </div>
+</div>
+
+<footer>
+    <p>© 2026 EduGenie | AI-Powered Learning Assistant</p>
+</footer>
+
+<script>
+
+const API = "http://127.0.0.1:8000";
+
+async function askQuestion() {
+    const question = document.getElementById("question").value.trim();
+    const result = document.getElementById("answer");
+
+    if (!question) {
+        alert("Please enter a question.");
+        return;
+    }
+
+    result.style.display = "block";
+    result.innerText = "Thinking...";
+
+    try {
+        const response = await fetch(API + "/ask", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({question})
+        });
+
+        const data = await response.json();
+        result.innerText = data.answer;
+
+    } catch (error) {
+        result.innerText = "Backend connection error.";
+    }
+}
+
+async function generateQuiz() {
+    const topic = document.getElementById("quizTopic").value.trim();
+    const result = document.getElementById("quizResult");
+
+    if (!topic) {
+        alert("Please enter a topic.");
+        return;
+    }
+
+    result.style.display = "block";
+    result.innerText = "Generating quiz...";
+
+    try {
+        const response = await fetch(API + "/generate-quiz", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({topic})
+        });
+
+        const data = await response.json();
+
+        let output = "Quiz Topic: " + data.topic + "\n\n";
+
+        data.quiz.forEach((q, index) => {
+            output += (index + 1) + ". " + q.question + "\n";
+
+            q.options.forEach((option, i) => {
+                output += String.fromCharCode(65 + i) + ". " + option + "\n";
+            });
+
+            output += "Answer: " + q.answer + "\n\n";
+        });
+
+        result.innerText = output;
+
+    } catch (error) {
+        result.innerText = "Backend connection error.";
+    }
+}
+
+async function summarizeText() {
+    const text = document.getElementById("summaryText").value.trim();
+    const result = document.getElementById("summaryResult");
+
+    if (!text) {
+        alert("Please enter some text.");
+        return;
+    }
+
+    result.style.display = "block";
+    result.innerText = "Summarizing...";
+
+    try {
+        const response = await fetch(API + "/summarize", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({text})
+        });
+
+        const data = await response.json();
+        result.innerText = data.summary;
+
+    } catch (error) {
+        result.innerText = "Backend connection error.";
+    }
+}
+
+async function generatePath() {
+    const topic = document.getElementById("learningTopic").value.trim();
+    const result = document.getElementById("pathResult");
+
+    if (!topic) {
+        alert("Please enter a topic.");
+        return;
+    }
+
+    result.style.display = "block";
+    result.innerText = "Creating learning path...";
+
+    try {
+        const response = await fetch(API + "/learning-path", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({topic})
+        });
+
+        const data = await response.json();
+
+        let output = "Learning Path: " + data.topic + "\n\n";
+
+        data.learning_path.forEach(level => {
+            output += level.level + " (" + level.duration + ")\n";
+
+            level.topics.forEach(item => {
+                output += "• " + item + "\n";
+            });
+
+            output += "\n";
+        });
+
+        result.innerText = output;
+
+    } catch (error) {
+        result.innerText = "Backend connection error.";
+    }
+}
+
+</script>
+
+</body>
+</html>
